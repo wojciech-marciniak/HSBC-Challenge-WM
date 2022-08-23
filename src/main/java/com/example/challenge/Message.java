@@ -6,6 +6,9 @@ import lombok.NoArgsConstructor;
 import javax.persistence.*;
 import java.sql.Timestamp;
 
+/**
+ * Message written or read
+ */
 @Entity
 @Data
 @NoArgsConstructor

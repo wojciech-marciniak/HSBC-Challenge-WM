@@ -24,7 +24,7 @@ public class MainService {
 		this.followingRepo = followingRepo;
 	}
 
-	long writeMessage(String text, String name) throws AppException {
+	long writeFirstMessage(String text, String name) throws AppException {
 		if (text.length() > 140) throw new AppException("Your message is too long");
 		if (text.length() < 1) throw new AppException("No text found");
 		Person person = personRepo.findByName(name);
@@ -37,6 +37,15 @@ public class MainService {
 		personRepo.save(person);
 		Message message = new Message(text, person);
 		message.setDate(new Timestamp(new Date().getTime()));
+		return messageRepo.save(message).getId();
+	}
+
+	public long writeMessage(long userId, String text) throws AppException {
+		Person person = personRepo.findById(userId).orElseThrow(() -> new AppException("No such a person"));
+		Message message = new Message();
+		message.setDate(new Timestamp(new Date().getTime()));
+		message.setAuthor(person);
+		message.setText(text);
 		return messageRepo.save(message).getId();
 	}
 
@@ -60,11 +69,23 @@ public class MainService {
 
 	void follow(Long whoToFollow, Long whoAmI) throws AppException {
 		Person personToBeObserved = personRepo.findById(whoToFollow).orElseThrow(() -> new AppException("No such a person to be followed"));
-		Person thatIsMe = personRepo.findById(whoAmI).orElseThrow(() -> new AppException("No such a person to follow"));
+		Person thatIsMe = personRepo.findById(whoAmI).orElseThrow(() -> new AppException("No such a person (follower)"));
 		Follows follows = new Follows();
 		follows.setObserver(thatIsMe);
 		follows.setAuthor(personToBeObserved);
 		followingRepo.save(follows);
+	}
+
+	void unfollow(Long whoToUnFollow, Long whoAmI) throws AppException {
+		Person personObserved = personRepo.findById(whoToUnFollow).orElseThrow(() -> new AppException("No such a person followed"));
+		Person thatIsMe = personRepo.findById(whoAmI).orElseThrow(() -> new AppException("No such a person (follower)"));
+		List<Follows> follows = followingRepo.findFollowsByObserver(thatIsMe);
+		for(Follows f: follows) {
+			if (f.getAuthor().equals(personObserved)) {
+				return;
+			}
+		}
+		throw new AppException("No such a relation");
 	}
 
 }
